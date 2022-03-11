@@ -62,4 +62,12 @@ public class Network {
         this.attributes = attributes;
     }
 
+    @Override
+    public String toString() {
+        return "Network{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

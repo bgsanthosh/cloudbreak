@@ -103,4 +103,14 @@ public class SecurityGroup {
     // public void setCloudPlatform(String cloudPlatform) {
     //     this.cloudPlatform = cloudPlatform;
     // }
+
+    @Override
+    public String toString() {
+        return "SecurityGroup{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", securityGroupIds=" + securityGroupIds +
+                '}';
+    }
 }
