@@ -123,6 +123,9 @@ public class EnvironmentRequest extends EnvironmentBaseRequest implements Creden
 
     private CcmV2TlsType ccmV2TlsType;
 
+    @ApiModelProperty(EnvironmentModelDescription.HYBRID_PLATFORM)
+    private Boolean hybridPlatform;
+
     public AttachedFreeIpaRequest getFreeIpa() {
         return freeIpa;
     }
@@ -320,6 +323,14 @@ public class EnvironmentRequest extends EnvironmentBaseRequest implements Creden
 
     public void setCcmV2TlsType(CcmV2TlsType ccmV2TlsType) {
         this.ccmV2TlsType = ccmV2TlsType;
+    }
+
+    public Boolean getHybridPlatform() {
+        return hybridPlatform;
+    }
+
+    public void setHybridPlatform(Boolean hybridPlatform) {
+        this.hybridPlatform = hybridPlatform;
     }
 
     @Override

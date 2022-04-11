@@ -144,6 +144,10 @@ public class EnvironmentApiConverter {
                 .withParentEnvironmentName(request.getParentEnvironmentName())
                 .withProxyConfigName(request.getProxyConfigName());
 
+        if (Boolean.TRUE.equals(request.getHybridPlatform())) {
+            builder.withHybridPlatform();
+        }
+
         NullUtil.doIfNotNull(request.getNetwork(), network -> builder.withNetwork(networkRequestToDto(network)));
         NullUtil.doIfNotNull(request.getSecurityAccess(), securityAccess -> builder.withSecurityAccess(securityAccessRequestToDto(securityAccess)));
 

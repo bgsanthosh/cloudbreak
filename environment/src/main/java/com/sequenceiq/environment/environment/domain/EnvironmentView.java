@@ -24,6 +24,7 @@ import com.sequenceiq.environment.environment.dto.EnvironmentBackup;
 import com.sequenceiq.environment.environment.dto.telemetry.EnvironmentTelemetry;
 import com.sequenceiq.environment.network.dao.domain.BaseNetwork;
 import com.sequenceiq.environment.parameters.dao.converter.EnvironmentDeletionTypeConverter;
+import com.sequenceiq.environment.parameters.dao.converter.EnvironmentPlatformConverter;
 import com.sequenceiq.environment.parameters.dao.converter.EnvironmentStatusConverter;
 import com.sequenceiq.environment.parameters.dao.domain.BaseParameters;
 import com.sequenceiq.environment.proxy.domain.ProxyConfigView;
@@ -145,6 +146,9 @@ public class EnvironmentView extends CompactView implements AuthResource {
     @ManyToOne
     @JoinColumn(name = "parent_environment_id", referencedColumnName = "id")
     private ParentEnvironmentView parentEnvironment;
+
+    @Convert(converter = EnvironmentPlatformConverter.class)
+    private EnvironmentPlatform platform;
 
     public ProxyConfigView getProxyConfig() {
         return proxyConfig;
@@ -479,6 +483,14 @@ public class EnvironmentView extends CompactView implements AuthResource {
 
     public void setFreeIpaEnableMultiAz(boolean freeIpaEnableMultiAz) {
         this.freeIpaEnableMultiAz = freeIpaEnableMultiAz;
+    }
+
+    public EnvironmentPlatform getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(EnvironmentPlatform platform) {
+        this.platform = platform;
     }
 
     @Override

@@ -139,6 +139,16 @@ public abstract class AbstractIntegrationTest extends AbstractMinimalTest {
                 .validate();
     }
 
+    protected void createHybridEnvironment(TestContext testContext) {
+        testContext.given(EnvironmentTestDto.class)
+                .withHybridSdx()
+                .withCreateFreeIpa(Boolean.FALSE)
+                .when(environmentTestClient.create())
+                .await(EnvironmentStatus.AVAILABLE)
+                .when(environmentTestClient.describe())
+                .validate();
+    }
+
     protected void createDatalake(TestContext testContext) {
         initiateDatalakeCreation(testContext);
         waitForDatalakeCreation(testContext);

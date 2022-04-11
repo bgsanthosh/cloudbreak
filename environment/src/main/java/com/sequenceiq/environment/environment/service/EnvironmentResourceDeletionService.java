@@ -18,20 +18,21 @@ import com.sequenceiq.cloudbreak.api.endpoint.v4.clustertemplate.ClusterTemplate
 import com.sequenceiq.cloudbreak.api.endpoint.v4.stacks.DatalakeV4Endpoint;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.stacks.response.StackViewV4Response;
 import com.sequenceiq.cloudbreak.auth.crn.RegionAwareInternalCrnGeneratorFactory;
+import com.sequenceiq.cloudbreak.saas.sdx.CrnAwareSdxConnector;
+import com.sequenceiq.cloudbreak.saas.sdx.TargetPlatform;
 import com.sequenceiq.distrox.api.v1.distrox.endpoint.DistroXV1Endpoint;
+import com.sequenceiq.environment.environment.domain.EnvironmentPlatform;
 import com.sequenceiq.environment.environment.domain.EnvironmentView;
 import com.sequenceiq.environment.environment.dto.EnvironmentExperienceDto;
-import com.sequenceiq.environment.experience.ExperienceConnectorService;
 import com.sequenceiq.environment.exception.EnvironmentServiceException;
-import com.sequenceiq.sdx.api.endpoint.SdxEndpoint;
-import com.sequenceiq.sdx.api.model.SdxClusterResponse;
+import com.sequenceiq.environment.experience.ExperienceConnectorService;
 
 @Service
 public class EnvironmentResourceDeletionService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EnvironmentResourceDeletionService.class);
 
-    private final SdxEndpoint sdxEndpoint;
+    private final CrnAwareSdxConnector crnAwareSdxConnector;
 
     private final DatalakeV4Endpoint datalakeV4Endpoint;
 
@@ -43,10 +44,10 @@ public class EnvironmentResourceDeletionService {
 
     private final RegionAwareInternalCrnGeneratorFactory regionAwareInternalCrnGeneratorFactory;
 
-    public EnvironmentResourceDeletionService(SdxEndpoint sdxEndpoint, DatalakeV4Endpoint datalakeV4Endpoint, DistroXV1Endpoint distroXV1Endpoint,
-            ClusterTemplateV4Endpoint clusterTemplateV4Endpoint, ExperienceConnectorService experienceConnectorService,
+    public EnvironmentResourceDeletionService(CrnAwareSdxConnector crnAwareSdxConnector, DatalakeV4Endpoint datalakeV4Endpoint,
+            DistroXV1Endpoint distroXV1Endpoint, ClusterTemplateV4Endpoint clusterTemplateV4Endpoint, ExperienceConnectorService experienceConnectorService,
             RegionAwareInternalCrnGeneratorFactory regionAwareInternalCrnGeneratorFactory) {
-        this.sdxEndpoint = sdxEndpoint;
+        this.crnAwareSdxConnector = crnAwareSdxConnector;
         this.datalakeV4Endpoint = datalakeV4Endpoint;
         this.distroXV1Endpoint = distroXV1Endpoint;
         this.clusterTemplateV4Endpoint = clusterTemplateV4Endpoint;
@@ -68,12 +69,8 @@ public class EnvironmentResourceDeletionService {
         Set<String> clusterCrns = new HashSet<>();
         LOGGER.debug("Get SDX clusters of the environment: '{}'", environment.getName());
         try {
-            Set<String> sdxClusterCrns = sdxEndpoint
-                    .list(environment.getName(), true)
-                    .stream()
-                    .map(SdxClusterResponse::getCrn)
-                    .collect(Collectors.toSet());
-            clusterCrns.addAll(sdxClusterCrns);
+            clusterCrns = crnAwareSdxConnector.listSdxCrns(environment.getName(), environment.getResourceCrn(),
+                    getSdxTargetPlatform(environment));
         } catch (WebApplicationException e) {
             propagateException("Failed to get SDX clusters from SDX service due to:", e);
         } catch (ProcessingException e) {
@@ -146,6 +143,14 @@ public class EnvironmentResourceDeletionService {
     private void throwServiceException(Exception e, String message) {
         LOGGER.error(message, e);
         throw new EnvironmentServiceException(message, e);
+    }
+
+    private TargetPlatform getSdxTargetPlatform(EnvironmentView environmentView) {
+        if (EnvironmentPlatform.HYBRID.equals(environmentView.getPlatform())) {
+            return TargetPlatform.SAAS;
+        } else {
+            return TargetPlatform.PAAS;
+        }
     }
 
 }

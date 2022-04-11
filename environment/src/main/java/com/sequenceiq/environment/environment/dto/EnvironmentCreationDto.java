@@ -60,6 +60,8 @@ public class EnvironmentCreationDto {
 
     private final String proxyConfigName;
 
+    private final Boolean hybridPlatform;
+
     private EnvironmentCreationDto(Builder builder) {
         name = builder.name;
         description = builder.description;
@@ -87,6 +89,7 @@ public class EnvironmentCreationDto {
         crn = builder.crn;
         parentEnvironmentName = builder.parentEnvironmentName;
         proxyConfigName = builder.proxyConfigName;
+        hybridPlatform = builder.hybridPlatform;
     }
 
     public static Builder builder() {
@@ -181,6 +184,10 @@ public class EnvironmentCreationDto {
         return proxyConfigName;
     }
 
+    public Boolean getHybridPlatform() {
+        return hybridPlatform;
+    }
+
     @Override
     public String toString() {
         return "EnvironmentCreationDto{" +
@@ -236,6 +243,8 @@ public class EnvironmentCreationDto {
         private String parentEnvironmentName;
 
         private String proxyConfigName;
+
+        private Boolean hybridPlatform = Boolean.FALSE;
 
         private Builder() {
         }
@@ -347,6 +356,11 @@ public class EnvironmentCreationDto {
 
         public Builder withProxyConfigName(String proxyConfigName) {
             this.proxyConfigName = proxyConfigName;
+            return this;
+        }
+
+        public Builder withHybridPlatform() {
+            this.hybridPlatform = Boolean.TRUE;
             return this;
         }
 

@@ -93,6 +93,8 @@ public class EnvironmentModelDescription {
     public static final String OVERRIDE_TUNNEL = "Flag that marks that the request was intended to set the tunnel version by hand and it will not be " +
             "overwritten by Cloudbreak";
 
+    public static final String HYBRID_PLATFORM = "Flag that marks that the environment will be hybrid (environment, freeipa is PaaS, Sdx is SaaS)";
+
     public static final String LOG_CLOUD_STORAGE = "Cloud storage configuration for this environment. Service logs will be stored in the defined location.";
 
     public static final String IDBROKER_MAPPING_SOURCE = "IDBroker mapping source.";

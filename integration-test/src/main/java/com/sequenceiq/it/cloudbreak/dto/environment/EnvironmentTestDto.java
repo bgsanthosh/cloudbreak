@@ -144,6 +144,11 @@ public class EnvironmentTestDto
         return this;
     }
 
+    public EnvironmentTestDto withHybridSdx() {
+        getRequest().setHybridPlatform(Boolean.TRUE);
+        return this;
+    }
+
     public EnvironmentTestDto withMockIDBMS() {
         getRequest().setIdBrokerMappingSource(IdBrokerMappingSource.MOCK);
         return this;

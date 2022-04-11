@@ -30,6 +30,7 @@ import com.sequenceiq.environment.environment.dto.EnvironmentBackup;
 import com.sequenceiq.environment.environment.dto.telemetry.EnvironmentTelemetry;
 import com.sequenceiq.environment.network.dao.domain.BaseNetwork;
 import com.sequenceiq.environment.parameters.dao.converter.EnvironmentDeletionTypeConverter;
+import com.sequenceiq.environment.parameters.dao.converter.EnvironmentPlatformConverter;
 import com.sequenceiq.environment.parameters.dao.converter.EnvironmentStatusConverter;
 import com.sequenceiq.environment.parameters.dao.domain.BaseParameters;
 import com.sequenceiq.environment.proxy.domain.ProxyConfig;
@@ -162,6 +163,9 @@ public class Environment implements AuthResource, AccountAwareResource {
 
     @Column(name = "environment_domain")
     private String domain;
+
+    @Convert(converter = EnvironmentPlatformConverter.class)
+    private EnvironmentPlatform platform;
 
     public Environment() {
         regions = new Json(new HashSet<Region>());
@@ -551,6 +555,14 @@ public class Environment implements AuthResource, AccountAwareResource {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public EnvironmentPlatform getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(EnvironmentPlatform platform) {
+        this.platform = platform;
     }
 
     @Override

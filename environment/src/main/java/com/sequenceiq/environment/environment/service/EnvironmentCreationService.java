@@ -24,6 +24,7 @@ import com.sequenceiq.common.api.type.Tunnel;
 import com.sequenceiq.environment.credential.domain.Credential;
 import com.sequenceiq.environment.environment.EnvironmentStatus;
 import com.sequenceiq.environment.environment.domain.Environment;
+import com.sequenceiq.environment.environment.domain.EnvironmentPlatform;
 import com.sequenceiq.environment.environment.domain.ExperimentalFeatures;
 import com.sequenceiq.environment.environment.dto.AuthenticationDtoConverter;
 import com.sequenceiq.environment.environment.dto.EnvironmentCreationDto;
@@ -136,6 +137,7 @@ public class EnvironmentCreationService {
         environment.setCloudPlatform(credential.getCloudPlatform());
         environment.setAuthentication(authenticationDtoConverter.dtoToAuthentication(creationDto.getAuthentication()));
         environment.setEnvironmentServiceVersion(environmentServiceVersion);
+        environment.setPlatform(Boolean.TRUE.equals(creationDto.getHybridPlatform()) ? EnvironmentPlatform.HYBRID : EnvironmentPlatform.PAAS);
         LOGGER.info("Environment is initialized for creation.");
         return environment;
     }
