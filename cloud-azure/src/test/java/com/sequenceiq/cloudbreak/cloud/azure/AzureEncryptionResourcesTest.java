@@ -298,6 +298,7 @@ public class AzureEncryptionResourcesTest {
         when(azureClient.keyVaultExists("dummyResourceGroup", "dummyVaultName")).thenReturn(Boolean.TRUE);
         when(azureClient.checkKeyVaultAccessPolicyForServicePrincipal("dummyResourceGroup", "dummyVaultName", DES_PRINCIPAL_ID))
                 .thenReturn(true);
+        //when(azureClient.isRoleBasedAccessControlEnabled("dummyResourceGroup", "dummyVaultName")).thenReturn(false);
         initRetry();
         // Return the same DES instance to simulate that the poller checker task instantly completed
         when(diskEncryptionSetCreationPoller.startPolling(eq(authenticatedContext), any(DiskEncryptionSetCreationCheckerContext.class), eq(des)))

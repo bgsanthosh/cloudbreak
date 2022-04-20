@@ -129,6 +129,12 @@ public class EnvironmentEncryptionService {
         Optional<CloudResource> rgCloudResourceOptional = resourceRetriever.findByEnvironmentIdAndType(environment.getId(),
                 ResourceType.AZURE_RESOURCE_GROUP);
         rgCloudResourceOptional.ifPresent(resources::add);
+
+        // Role ID is persisted in cloudResource only when it is created by CDP, as part of disk encryption set creation in case of
+        // roles based key vault access.
+        Optional<CloudResource> roleCloudResourceOptional = resourceRetriever.findByEnvironmentIdAndType(environment.getId(),
+                ResourceType.AZURE_ROLE);
+        roleCloudResourceOptional.ifPresent(resources::add);
         return resources;
     }
 }

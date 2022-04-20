@@ -5,6 +5,7 @@ import static com.microsoft.azure.management.compute.DiskSkuTypes.STANDARD_LRS;
 import static com.microsoft.azure.management.compute.DiskSkuTypes.STANDARD_SSD_LRS;
 import static com.microsoft.azure.management.compute.DiskSkuTypes.ULTRA_SSD_LRS;
 import static com.microsoft.azure.management.privatedns.v2018_09_01.ProvisioningState.SUCCEEDED;
+import static com.sequenceiq.cloudbreak.cloud.azure.task.interactivelogin.AzureInteractiveLoginStatusCheckerTask.AZURE_MANAGEMENT;
 import static com.sequenceiq.cloudbreak.util.Benchmark.measure;
 import static java.util.Collections.emptyMap;
 
@@ -21,14 +22,29 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.resourcemanager.keyvault.KeyVaultManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.gson.JsonObject;
 import com.microsoft.azure.CloudException;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
@@ -109,6 +125,7 @@ import com.sequenceiq.cloudbreak.cloud.azure.AzureDiskType;
 import com.sequenceiq.cloudbreak.cloud.azure.AzurePrivateDnsZoneServiceEnum;
 import com.sequenceiq.cloudbreak.cloud.azure.image.marketplace.AzureMarketplaceImage;
 import com.sequenceiq.cloudbreak.cloud.azure.status.AzureStatusMapper;
+import com.sequenceiq.cloudbreak.cloud.azure.task.interactivelogin.InteractiveLoginException;
 import com.sequenceiq.cloudbreak.cloud.azure.util.AzureAuthExceptionHandler;
 import com.sequenceiq.cloudbreak.cloud.exception.CloudConnectorException;
 import com.sequenceiq.cloudbreak.cloud.model.ResourceStatus;
@@ -1004,6 +1021,17 @@ public class AzureClient {
         });
     }
 
+    public boolean isRoleBasedAccessControlEnabled(String resourceGroupName, String vaultName) {
+        TokenCredential credential = (TokenCredential) azureClientCredentials.getAzureCredentials();
+        AzureProfile azProfile = new AzureProfile(azure.getCurrentSubscription().tenantId(),
+                azure.getCurrentSubscription().subscriptionId(),
+                AzureEnvironment.AZURE);
+        return KeyVaultManager.authenticate(credential, azProfile)
+                .vaults()
+                .getByResourceGroup(resourceGroupName, vaultName)
+                .roleBasedAccessControlEnabled();
+    }
+
     public void grantKeyVaultAccessPolicyToServicePrincipal(String resourceGroupName, String vaultName, String principalObjectId) {
         handleAuthException(() -> {
             azure.vaults()
@@ -1058,6 +1086,89 @@ public class AzureClient {
             DiskEncryptionSetsInner dSetsIn = computeManager.inner().diskEncryptionSets();
             dSetsIn.delete(resourceGroup, diskEncryptionSetName);
         });
+    }
+
+    public String grantKeyVaultRoleToServicePrincipal(String vaultResourceGroupName, String vaultName, String principalObjectId)
+            throws InteractiveLoginException {
+        String accessToken = String.valueOf(getAccessToken());
+        Client client = ClientBuilder.newClient();
+        WebTarget resource = client.target(AZURE_MANAGEMENT);
+        String subscriptionId = azure.getCurrentSubscription().subscriptionId();
+        String roleId = UUID.randomUUID().toString();
+        Invocation.Builder request = resource.path("/subscriptions/" + subscriptionId + "/resourceGroups/" + vaultResourceGroupName +
+                "/providers/Microsoft.KeyVault/vaults/" + vaultName + "/providers/Microsoft.Authorization/roleAssignments/"
+                + roleId).queryParam("api-version", "2018-07-01").request();
+        request.accept(MediaType.APPLICATION_JSON);
+
+        request.header("Authorization", "Bearer " + accessToken);
+
+        JsonObject properties = new JsonObject();
+    // roleDefinitionId for the built-in Azure role "Key Vault Crypto Service Encryption User" is "e147488a-f6f5-4113-8e2d-b22465e65bf6".
+    //Reference - https://docs.microsoft.com/en-us/azure/key-vault/general/rbac-guide?tabs=azure-cli#azure-built-in-roles-for-key-vault-data-plane-operations
+        properties.addProperty("roleDefinitionId", "/subscriptions/" + subscriptionId + "/providers/Microsoft.Authorization/" +
+                "roleDefinitions/e147488a-f6f5-4113-8e2d-b22465e65bf6");
+        properties.addProperty("principalId", principalObjectId);
+        properties.addProperty("roleName", "Key Vault Crypto Service Encryption User");
+        properties.addProperty("scope",
+                "/subscriptions/" + subscriptionId + "/resourceGroups/" + vaultResourceGroupName + "/providers/Microsoft.KeyVault/vaults/" + vaultName);
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("properties", properties);
+
+        try (Response response = request.put(Entity.entity(jsonObject.toString(), MediaType.APPLICATION_JSON))) {
+            if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                String errorResponse = response.readEntity(String.class);
+                LOGGER.info("Assign role request error - status code: {} - error message: {}", response.getStatus(), errorResponse);
+                if (response.getStatusInfo().getStatusCode() == Response.Status.FORBIDDEN.getStatusCode()) {
+                    throw new InteractiveLoginException("You don't have enough permissions to assign roles, please contact with your administrator");
+                } else {
+                    try {
+                        String errorMessage = new ObjectMapper().readTree(errorResponse).get("error").get("message").asText();
+                        throw new InteractiveLoginException("Failed to assign role: " + errorMessage);
+                    } catch (IOException e) {
+                        throw new InteractiveLoginException("Failed to assign role (status " + response.getStatus() + "): " + errorResponse);
+                    }
+                }
+            } else {
+                LOGGER.debug("Role assigned successfully. subscriptionId '{}', principalObjectId {}",
+                        subscriptionId, principalObjectId);
+            }
+        }
+        return roleId;
+    }
+
+    public void removeKeyVaultRole(String resourceGroupName, String vaultName, String roleId) throws InteractiveLoginException {
+        String accessToken = String.valueOf(getAccessToken());
+        Client client = ClientBuilder.newClient();
+        WebTarget resource = client.target(AZURE_MANAGEMENT);
+        String subscriptionId = azure.getCurrentSubscription().subscriptionId();
+        Invocation.Builder request = resource.path("/subscriptions/" + azure.getCurrentSubscription().subscriptionId() +
+                "/resourceGroups/" + resourceGroupName + "/providers/Microsoft.KeyVault/vaults/" + vaultName
+                + "/providers/Microsoft.Authorization/roleassignments/" + roleId)
+                .queryParam("api-version", "2018-07-01").request();
+        request.accept(MediaType.APPLICATION_JSON);
+
+        request.header("Authorization", "Bearer " + accessToken);
+
+        try (Response response = request.delete()) {
+            if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                String errorResponse = response.readEntity(String.class);
+                LOGGER.info("Assign role request error - status code: {} - error message: {}", response.getStatus(), errorResponse);
+                if (response.getStatusInfo().getStatusCode() == Response.Status.FORBIDDEN.getStatusCode()) {
+                    throw new InteractiveLoginException("You don't have enough permissions to delete roles, please contact with your administrator");
+                } else {
+                    try {
+                        String errorMessage = new ObjectMapper().readTree(errorResponse).get("error").get("message").asText();
+                        throw new InteractiveLoginException("Failed to delete role: " + errorMessage);
+                    } catch (IOException e) {
+                        throw new InteractiveLoginException("Failed to delete role (status " + response.getStatus() + "): " + errorResponse);
+                    }
+                }
+            } else {
+                LOGGER.debug("Role deleted successfully. subscriptionId '{}', roleId {}",
+                        subscriptionId, roleId);
+            }
+        }
     }
 
     public Optional<String> getAccessToken() {

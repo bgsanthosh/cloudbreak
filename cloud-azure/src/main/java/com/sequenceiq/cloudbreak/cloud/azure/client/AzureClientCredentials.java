@@ -75,7 +75,7 @@ public class AzureClientCredentials {
         return MarketplaceOrderingManager.authenticate(azureClientCredentials, credentialView.getSubscriptionId());
     }
 
-    private AzureTokenCredentials getAzureCredentials() {
+    public AzureTokenCredentials getAzureCredentials() {
         String tenantId = credentialView.getTenantId();
         String clientId = credentialView.getAccessKey();
         String secretKey = credentialView.getSecretKey();

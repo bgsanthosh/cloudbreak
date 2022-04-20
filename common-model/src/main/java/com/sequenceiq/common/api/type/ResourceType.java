@@ -66,6 +66,7 @@ public enum ResourceType {
     AZURE_DNS_ZONE_GROUP,
     AZURE_VIRTUAL_NETWORK_LINK,
     AZURE_LOAD_BALANCER,
+    AZURE_ROLE,
 
     // ARM
     ARM_TEMPLATE(CommonResourceType.TEMPLATE),

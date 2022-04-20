@@ -37,6 +37,7 @@ dependencies {
   implementation (group: 'com.microsoft.azure',         name: 'azure-mgmt-sql',             version: azureSdkVersion) { exclude group: 'org.slf4j' }
   implementation (group: 'com.microsoft.azure.privatedns.v2018_09_01',         name: 'azure-mgmt-privatedns',             version: '1.0.0-beta') { exclude group: 'org.slf4j' }
   implementation group: 'com.microsoft.azure',         name: 'azure-storage',              version: azureStorageSdkVersion
+  implementation (group: 'com.azure.resourcemanager',         name: 'azure-resourcemanager-keyvault',        version: '2.13.0')
   implementation (group: 'com.fasterxml.jackson.core', name: 'jackson-databind',           version: jacksonVersion) {
     force = true
   }
