@@ -394,6 +394,34 @@ public class ClusterHostServiceRunner {
         }
     }
 
+    public void redeployGatewayPillarOnly(@Nonnull Stack stack, @Nonnull Cluster cluster) {
+        try {
+            Set<Node> allNodes = stackUtil.collectNodes(stack);
+            Set<Node> reachableNodes = stackUtil.collectReachableNodes(stack);
+            List<GatewayConfig> gatewayConfigs = gatewayConfigService.getAllGatewayConfigs(stack);
+            List<GrainProperties> grainsProperties = grainPropertiesService.createGrainProperties(gatewayConfigs, cluster, reachableNodes);
+            SaltConfig saltConfig = §(stack, cluster, grainsProperties);
+            ExitCriteriaModel exitCriteriaModel = clusterDeletionBasedModel(stack.getId(), cluster.getId());
+            hostOrchestrator.uploadGatewayPillar(gatewayConfigs, allNodes, exitCriteriaModel, saltConfig);
+        } catch (CloudbreakOrchestratorCancelledException e) {
+            throw new CancellationException(e.getMessage());
+        } catch (CloudbreakOrchestratorException | IOException e) {
+            throw new CloudbreakServiceException(e.getMessage(), e);
+        }
+    }
+
+    public void redeployStates(@Nonnull Stack stack, @Nonnull Cluster cluster) {
+        try {
+            List<GatewayConfig> gatewayConfigs = gatewayConfigService.getAllGatewayConfigs(stack);
+            ExitCriteriaModel exitCriteriaModel = clusterDeletionBasedModel(stack.getId(), cluster.getId());
+            hostOrchestrator.uploadStates(gatewayConfigs, exitCriteriaModel);
+        } catch (CloudbreakOrchestratorCancelledException e) {
+            throw new CancellationException(e.getMessage());
+        } catch (CloudbreakOrchestratorException e) {
+            throw new CloudbreakServiceException(e.getMessage(), e);
+        }
+    }
+
     private SaltConfig createSaltConfig(Stack stack, Cluster cluster, List<GrainProperties> grainsProperties)
             throws IOException, CloudbreakOrchestratorException {
         GatewayConfig primaryGatewayConfig = gatewayConfigService.getPrimaryGatewayConfig(stack);
@@ -441,6 +469,25 @@ public class ClusterHostServiceRunner {
         proxyConfigProvider.decoratePillarWithProxyDataIfNeeded(servicePillar, cluster);
 
         decoratePillarWithJdbcConnectors(cluster, servicePillar);
+
+        return new SaltConfig(servicePillar, grainsProperties);
+    }
+
+    private SaltConfig createSaltConfigWithGatewayPillarOnly(Stack stack, Cluster cluster, List<GrainProperties> grainsProperties)
+            throws IOException, CloudbreakOrchestratorException {
+
+        GatewayConfig primaryGatewayConfig = gatewayConfigService.getPrimaryGatewayConfig(stack);
+        String virtualGroupsEnvironmentCrn = environmentConfigProvider.getParentEnvironmentCrn(stack.getEnvironmentCrn());
+        ClusterPreCreationApi connector = clusterApiConnectors.getConnector(cluster);
+        Map<String, List<String>> serviceLocations = getServiceLocations(cluster);
+        Optional<LdapView> ldapView = ldapConfigService.get(stack.getEnvironmentCrn(), stack.getName());
+        VirtualGroupRequest virtualGroupRequest = getVirtualGroupRequest(virtualGroupsEnvironmentCrn, ldapView);
+        KerberosConfig kerberosConfig = kerberosConfigService.get(stack.getEnvironmentCrn(), stack.getName()).orElse(null);
+        ClouderaManagerRepo clouderaManagerRepo = clusterComponentConfigProvider.getClouderaManagerRepoDetails(cluster.getId());
+
+        Map<String, SaltPillarProperties> servicePillar =
+                new HashMap<>(createGatewayPillar(primaryGatewayConfig, cluster, stack, virtualGroupRequest, connector, kerberosConfig, serviceLocations,
+                        clouderaManagerRepo));
 
         return new SaltConfig(servicePillar, grainsProperties);
     }
