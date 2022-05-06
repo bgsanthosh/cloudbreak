@@ -23,8 +23,7 @@ public abstract class AbstractStorageOperationHandler extends ExceptionCatcherEv
 
     @Override
     protected Selectable defaultFailureEvent(Long resourceId, Exception e, Event<StorageConsumptionCollectionEvent> event) {
-        return new StorageConsumptionCollectionFailureEvent(resourceId, e, event.getData().getResourceCrn(), event.getData().getEnvironmentCrn(),
-                event.getData().getStorageLocation());
+        return new StorageConsumptionCollectionFailureEvent(resourceId, e, event.getData().getResourceCrn());
     }
 
     public abstract Selectable executeOperation(HandlerEvent<StorageConsumptionCollectionEvent> data) throws Exception;

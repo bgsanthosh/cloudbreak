@@ -25,8 +25,6 @@ public class SendConsumptionEventHandler  extends AbstractStorageOperationHandle
         return StorageConsumptionCollectionEvent.builder()
                 .withResourceCrn(resourceCrn)
                 .withResourceId(resourceId)
-                .withEnvironmentCrn(data.getEnvironmentCrn())
-                .withStorageLocation(data.getStorageLocation())
                 .withSelector(STORAGE_CONSUMPTION_COLLECTION_FINISH_EVENT.selector())
                 .build();
     }
