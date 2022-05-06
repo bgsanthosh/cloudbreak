@@ -304,6 +304,9 @@ public class AwsCloudProvider extends AbstractCloudProvider {
         } else {
             parameters = awsCredentialDetailsArn();
         }
+        if (awsProperties.getGovCloud()) {
+            parameters.setGovCloud(true);
+        }
         return credential
                 .withDescription(commonCloudProperties().getDefaultCredentialDescription())
                 .withCloudPlatform(CloudPlatform.AWS.name())
@@ -482,6 +485,8 @@ public class AwsCloudProvider extends AbstractCloudProvider {
     public String getVariant() {
         if (awsProperties.getMultiaz()) {
             return "AWS_NATIVE";
+        } else if (awsProperties.getGovCloud()) {
+            return "AWS_NATIVE_GOV";
         } else {
             return "AWS";
         }
