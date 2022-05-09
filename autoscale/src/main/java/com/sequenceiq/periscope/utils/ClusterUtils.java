@@ -17,6 +17,11 @@ public class ClusterUtils {
         return lastScalingActivity == 0L ? 0L : coolDownMs - (System.currentTimeMillis() - lastScalingActivity);
     }
 
+    public static long getRemainingCoolDownTimePostScalingActivity(long coolDownMs, Long lastScalingActivityCompleted) {
+        return lastScalingActivityCompleted == null || lastScalingActivityCompleted == 0L
+                ? 0L : coolDownMs - (System.currentTimeMillis() - lastScalingActivityCompleted);
+    }
+
     public static long memoryBytesToMB(long memoryInBytes) {
         return memoryInBytes / MEGABYTE;
     }

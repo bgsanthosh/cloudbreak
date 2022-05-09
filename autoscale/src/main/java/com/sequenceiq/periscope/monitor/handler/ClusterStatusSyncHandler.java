@@ -71,6 +71,8 @@ public class ClusterStatusSyncHandler implements ApplicationListener<ClusterStat
             clusterService.setState(cluster.getId(), ClusterState.RUNNING);
             LOGGER.info("Updated cluster '{}' to Running, CB Stack Status '{}', CB Cluster Status '{}'.",
                     cluster.getStackCrn(), statusResponse.getStatus(), statusResponse.getClusterStatus());
+            // this might not be the exact point during which scaling activity completed, but an approximation
+            clusterService.setLastScalingActivityCompleted(cluster.getId(), System.currentTimeMillis());
         } else if (!clusterAvailable && RUNNING.equals(cluster.getState())) {
             clusterService.setState(cluster.getId(), ClusterState.SUSPENDED);
             LOGGER.info("Suspended cluster '{}', CB Stack Status '{}', CB Cluster Status '{}'",

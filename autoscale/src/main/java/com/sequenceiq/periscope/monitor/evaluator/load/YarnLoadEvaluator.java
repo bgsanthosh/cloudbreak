@@ -107,7 +107,7 @@ public class YarnLoadEvaluator extends EvaluatorExecutor {
             pollingUserCrn = Optional.ofNullable(getMachineUserCrnIfApplicable(cluster)).orElse(cluster.getClusterPertain().getUserCrn());
 
             if (isCoolDownTimeElapsed(cluster.getStackCrn(), "polled", loadAlertConfiguration.getPollingCoolDownMillis(),
-                    cluster.getLastScalingActivity())) {
+                    cluster.getLastScalingActivityCompleted())) {
                 pollYarnMetricsAndScaleCluster();
             }
         } catch (Exception ex) {
@@ -161,7 +161,7 @@ public class YarnLoadEvaluator extends EvaluatorExecutor {
     private void fireAppropriateEvent(int yarnRecommendedScaleUpCount, StackV4Response stackV4Response, int existingHostGroupSize,
             int serviceHealthyHostGroupSize, List<String> yarnRecommendedDecommissionHosts) {
         if (yarnRecommendedScaleUpCount > 0 && isCoolDownTimeElapsed(cluster.getStackCrn(), "scaled-up",
-                loadAlertConfiguration.getScaleUpCoolDownMillis(), cluster.getLastScalingActivity()))  {
+                loadAlertConfiguration.getScaleUpCoolDownMillis(), cluster.getLastScalingActivityCompleted()))  {
             if (Boolean.TRUE.equals(cluster.isStopStartScalingEnabled())) {
                 Integer existingClusterNodeCount = stackV4Response.getNodeCount() -
                         stackResponseUtils.getStoppedInstanceCountInHostGroup(stackV4Response, policyHostGroup);
@@ -170,7 +170,7 @@ public class YarnLoadEvaluator extends EvaluatorExecutor {
                 sendScaleUpEvent(stackV4Response.getNodeCount(), existingHostGroupSize, yarnRecommendedScaleUpCount);
             }
         } else if (!yarnRecommendedDecommissionHosts.isEmpty() && isCoolDownTimeElapsed(cluster.getStackCrn(), "scaled-down",
-                loadAlertConfiguration.getScaleDownCoolDownMillis(), cluster.getLastScalingActivity()))  {
+                loadAlertConfiguration.getScaleDownCoolDownMillis(), cluster.getLastScalingActivityCompleted()))  {
             sendScaleDownEvent(serviceHealthyHostGroupSize, yarnRecommendedDecommissionHosts);
         }
     }

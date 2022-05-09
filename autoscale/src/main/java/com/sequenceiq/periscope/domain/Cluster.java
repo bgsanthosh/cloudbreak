@@ -90,6 +90,9 @@ public class Cluster implements Monitored, Clustered {
     @Column(name = "last_scaling_activity")
     private volatile long lastScalingActivity;
 
+    @Column(name = "last_scaling_activity_completed")
+    private volatile Long lastScalingActivityCompleted;
+
     @Column(name = "autoscaling_enabled")
     private Boolean autoscalingEnabled = false;
 
@@ -222,6 +225,14 @@ public class Cluster implements Monitored, Clustered {
 
     public void setLastScalingActivity(long lastScalingActivity) {
         this.lastScalingActivity = lastScalingActivity;
+    }
+
+    public Long getLastScalingActivityCompleted() {
+        return lastScalingActivityCompleted;
+    }
+
+    public void setLastScalingActivityCompleted(Long lastScalingActivityCompleted) {
+        this.lastScalingActivityCompleted = lastScalingActivityCompleted;
     }
 
     public String getHost() {

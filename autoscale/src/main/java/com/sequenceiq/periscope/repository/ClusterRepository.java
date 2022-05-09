@@ -104,6 +104,10 @@ public interface ClusterRepository extends CrudRepository<Cluster, Long> {
     void setClusterLastScalingActivity(@Param("clusterId") Long clusterId, @Param("lastScalingActivity") Long lastScalingActivity);
 
     @Modifying
+    @Query("UPDATE Cluster c SET c.lastScalingActivityCompleted = :lastScalingActivityCompleted WHERE c.id = :clusterId")
+    void setClusterLastScalingActivityCompleted(@Param("clusterId") Long clusterId, @Param("lastScalingActivityCompleted") Long lastScalingActivityCompleted);
+
+    @Modifying
     @Query("UPDATE Cluster c SET c.updateFailedDetails = :updateFailedDetails WHERE c.id = :clusterId")
     void setClusterUpdateFailedDetails(@Param("clusterId") Long clusterId, @Param("updateFailedDetails") UpdateFailedDetails updateFailedDetails);
 }

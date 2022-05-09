@@ -46,9 +46,8 @@ public abstract class EvaluatorExecutor implements Runnable {
 
     protected abstract void execute();
 
-    protected boolean isCoolDownTimeElapsed(String clusterCrn, String coolDownAction, long expectedCoolDownMillis, long lastClusterScalingActivity) {
-        long remainingTime = ClusterUtils.getRemainingCooldownTime(
-                expectedCoolDownMillis, lastClusterScalingActivity);
+    protected boolean isCoolDownTimeElapsed(String clusterCrn, String coolDownAction, long expectedCoolDownMillis, long lastClusterScalingActivityCompleted) {
+        long remainingTime = ClusterUtils.getRemainingCoolDownTimePostScalingActivity(expectedCoolDownMillis, lastClusterScalingActivityCompleted);
 
         if (remainingTime <= 0) {
             return true;

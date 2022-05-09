@@ -230,6 +230,10 @@ public class ClusterService {
         clusterRepository.setClusterLastScalingActivity(clusterId, lastScalingActivity);
     }
 
+    public void setLastScalingActivityCompleted(Long clusterId, Long lastScalingActivityCompleted) {
+        clusterRepository.setClusterLastScalingActivityCompleted(clusterId, lastScalingActivityCompleted);
+    }
+
     public void setUpdateFailedDetails(Long clusterId, UpdateFailedDetails updateFailedDetails) {
         clusterRepository.setClusterUpdateFailedDetails(clusterId, updateFailedDetails);
     }
