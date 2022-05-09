@@ -1,5 +1,6 @@
 package com.sequenceiq.datalake.flow.refresh;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.action.Action;
 
+import com.google.api.client.util.Strings;
 import com.sequenceiq.cloudbreak.event.ResourceEvent;
 import com.sequenceiq.datalake.entity.DatalakeStatusEnum;
 import com.sequenceiq.datalake.entity.SdxCluster;
@@ -73,7 +75,11 @@ public class DatahubRefreshActions {
                         sdxCluster, context.getFlowTriggerUserCrn(), ResourceEvent.ENVIRONMENT_RESTART_DATAHUB_STARTED);
                 sdxStatusService.setStatusForDatalakeAndNotify(DatalakeStatusEnum.RUNNING,
                         "Datahub refresh in progress", payload.getResourceId());
-                sdxRefreshService.refreshAllDatahub(payload.getResourceId());
+                if (Strings.isNullOrEmpty(payload.getDataHubName())) {
+                    sdxRefreshService.refreshAllDatahub(payload.getResourceId());
+                } else {
+                    sdxRefreshService.restartClusterServicesByCrns(List.of(payload.getDataHubName()));
+                }
                 sendEvent(context, DatahubRefreshFlowEvent.DATAHUB_REFRESH_IN_PROGRESS_EVENT.selector(), payload);
             }
 

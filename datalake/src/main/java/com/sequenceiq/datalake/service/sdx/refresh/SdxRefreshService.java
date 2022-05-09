@@ -1,5 +1,7 @@
 package com.sequenceiq.datalake.service.sdx.refresh;
 
+import java.util.List;
+
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 
@@ -41,6 +43,10 @@ public class SdxRefreshService {
             LOGGER.info("Can not restart datahubs {} from cloudbreak: {}", sdxCluster.getStackId(), errorMessage, e);
             throw new RuntimeException("Can not restart datahubs, error happened during operation: " + errorMessage);
         }
+    }
+
+    public void restartClusterServicesByCrns(List<String> crns) {
+        distroxService.restartDistroxByCrns(crns);
     }
 
     public void waitCloudbreakCluster(Long sdxId, PollingConfig pollingConfig) {

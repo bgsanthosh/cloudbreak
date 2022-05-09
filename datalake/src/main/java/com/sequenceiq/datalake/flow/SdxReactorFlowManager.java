@@ -13,6 +13,7 @@ import static com.sequenceiq.datalake.flow.dr.backup.DatalakeBackupEvent.DATALAK
 import static com.sequenceiq.datalake.flow.dr.backup.DatalakeBackupEvent.DATALAKE_TRIGGER_BACKUP_EVENT;
 import static com.sequenceiq.datalake.flow.dr.restore.DatalakeRestoreEvent.DATALAKE_DATABASE_RESTORE_EVENT;
 import static com.sequenceiq.datalake.flow.dr.restore.DatalakeRestoreEvent.DATALAKE_TRIGGER_RESTORE_EVENT;
+import static com.sequenceiq.datalake.flow.refresh.DatahubRefreshFlowEvent.DATAHUB_REFRESH_START_EVENT;
 import static com.sequenceiq.datalake.flow.repair.SdxRepairEvent.SDX_REPAIR_EVENT;
 import static com.sequenceiq.datalake.flow.start.SdxStartEvent.SDX_START_EVENT;
 import static com.sequenceiq.datalake.flow.stop.SdxStopEvent.SDX_STOP_EVENT;
@@ -50,6 +51,7 @@ import com.sequenceiq.datalake.flow.dr.backup.event.DatalakeDatabaseBackupStartE
 import com.sequenceiq.datalake.flow.dr.backup.event.DatalakeTriggerBackupEvent;
 import com.sequenceiq.datalake.flow.dr.restore.event.DatalakeDatabaseRestoreStartEvent;
 import com.sequenceiq.datalake.flow.dr.restore.event.DatalakeTriggerRestoreEvent;
+import com.sequenceiq.datalake.flow.refresh.event.DatahubRefreshStartEvent;
 import com.sequenceiq.datalake.flow.repair.event.SdxRepairStartEvent;
 import com.sequenceiq.datalake.flow.start.event.SdxStartStartEvent;
 import com.sequenceiq.datalake.flow.stop.event.SdxStartStopEvent;
@@ -128,6 +130,14 @@ public class SdxReactorFlowManager {
                 new DatalakeResizeRecoveryFlowChainStartEvent(oldSdxCluster, newSdxCluster, userId),
                 oldSdxCluster.getClusterName()
         );
+    }
+
+    public FlowIdentifier triggerSdxRefresh(SdxCluster sdxCluster) {
+        LOGGER.info("Triggering Datalake refreshing for: {}", sdxCluster.getId());
+        String userCrn = ThreadBasedUserCrnProvider.getUserCrn();
+        return notify(DATAHUB_REFRESH_START_EVENT.event(),
+                new DatahubRefreshStartEvent(sdxCluster.getId(), sdxCluster.getClusterName(), userCrn),
+                sdxCluster.getClusterName());
     }
 
     public FlowIdentifier triggerSdxDeletion(SdxCluster cluster, boolean forced) {

@@ -122,6 +122,11 @@ public interface SdxEndpoint {
     @ApiOperation(value = "Re-size SDX cluster", produces = "application/json", nickname = "resizeSdx")
     SdxClusterResponse resize(@PathParam("name") String name, @Valid SdxClusterResizeRequest resizeSdxClusterRequest);
 
+    @POST
+    @Path("{name}/refresh")
+    @Produces(MediaType.APPLICATION_JSON)
+    SdxClusterResponse refresh(@PathParam("name") String name, @QueryParam("datahubName") String datahubName);
+
     @DELETE
     @Path("/crn/{clusterCrn}")
     @Produces(MediaType.APPLICATION_JSON)
